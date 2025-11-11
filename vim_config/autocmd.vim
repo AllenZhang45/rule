@@ -1,5 +1,4 @@
-" 自动命令和相关设置
-autocmd BufNewFile *.cpp,*.[ch],*.sh,*.java exec ":call SetTitle()"
+autocmd BufNewFile *.cpp,*.[ch],*.sh,*.java exec ":call SetTitle()"   " 自动命令：新建特定类型文件时插入模板标题
 
 function! SetTitle()
     if &filetype == 'sh'
