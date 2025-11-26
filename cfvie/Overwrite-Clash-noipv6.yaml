@@ -1,0 +1,223 @@
+mixed-port: 7890
+allow-lan: true
+bind-address: "*"
+ipv6: false
+mode: rule
+log-level: info
+external-controller: 0.0.0.0:9090
+
+dns:
+  enable: true
+  listen: 0.0.0.0:1053
+  ipv6: false
+  use-hosts: true
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+
+  # Fake-IP 极致过滤
+  fake-ip-filter:
+    - '*.lan'
+    - '*.local'
+    - localhost
+    - 'connectivitycheck.gstatic.com'
+    - '*.msftconnecttest.com'
+    - '*.msftncsi.com'
+    - '*.ntp.org'
+    - '*.pool.ntp.org'
+    - 'time*.apple.com'
+    - 'router.asus.com'
+    - '*.miwifi.com'
+    - '*.tplinkwifi.net'
+    - '*.tracker.*'
+    - '*.announce.*'
+    - '*.bittorrent.com'
+
+  # 国内外 DNS 双分流
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+
+  nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+
+  nameserver-policy:
+    "geosite:cn":
+      - https://dns.alidns.com/dns-query
+      - https://doh.pub/dns-query
+
+  "geosite:geolocation-!cn":
+      - https://cloudflare-dns.com/dns-query
+      - https://dns.google/dns-query
+
+  fallback:
+    - https://cloudflare-dns.com/dns-query
+    - https://dns.google/dns-query
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+    ipcidr:
+      - 240.0.0.0/4
+
+
+proxy-providers:
+  provider:
+    type: http
+    url: "$EN_KEY"
+    interval: 3600
+    health-check:
+      enable: true
+      url: http://www.gstatic.com/generate_204
+      interval: 600
+
+
+proxy-groups:
+
+  - name: 🚀 自动选择（Smart）
+    type: select
+    use:
+      - provider
+    proxies:
+      - ♻️ 负载均衡
+      - ⚡ 自动测速
+      - DIRECT
+
+  - name: ⚡ 自动测速
+    type: url-test
+    use:
+      - provider
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+
+  - name: ♻️ 负载均衡
+    type: load-balance
+    strategy: round-robin
+    use:
+      - provider
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+
+  - name: 📺 YouTube
+    type: select
+    proxies:
+      - 🚀 自动选择（Smart）
+      - ⚡ 自动测速
+
+  - name: 🎬 Netflix
+    type: select
+    proxies:
+      - 🚀 自动选择（Smart）
+      - ⚡ 自动测速
+
+  - name: 🐭 Disney+
+    type: select
+    proxies:
+      - 🚀 自动选择（Smart)
+
+
+  - name: 🎯 全球直连
+    type: select
+    proxies:
+      - DIRECT
+
+  - name: 🌍 国外流量
+    type: select
+    proxies:
+      - 🚀 自动选择（Smart）
+      - ⚡ 自动测速
+      - ♻️ 负载均衡
+
+  - name: 🧲 BT 下载
+    type: select
+    proxies:
+      - DIRECT
+      - 🚀 自动选择（Smart)
+
+
+
+rule-providers:
+
+  geosite-cn:
+    type: http
+    behavior: domain
+    path: ./ruleset/geosite-cn.yaml
+    url: https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/geosite-cn.yaml
+    interval: 86400
+
+  geoip-cn:
+    type: http
+    behavior: ipcidr
+    path: ./ruleset/geoip-cn.yaml
+    url: https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/geoip-cn.yaml
+    interval: 86400
+
+  cn-media:
+    type: http
+    behavior: domain
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/cn-media.yaml
+    path: ./ruleset/cn-media.yaml
+    interval: 86400
+
+  youtube:
+    type: http
+    behavior: domain
+    path: ./ruleset/youtube.yaml
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/youtube.yaml
+    interval: 86400
+
+  netflix:
+    type: http
+    behavior: domain
+    path: ./ruleset/netflix.yaml
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/netflix.yaml
+    interval: 86400
+
+  disney:
+    type: http
+    behavior: domain
+    path: ./ruleset/disney.yaml
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/disney.yaml
+    interval: 86400
+
+
+rules:
+
+  # BT 下载设备直连（10.10.1.101）
+  - SRC-IP-CIDR,10.10.1.101/32,DIRECT
+  - DST-PORT,6881-6999,DIRECT
+  - DOMAIN-KEYWORD,tracker,DIRECT
+  - DOMAIN-KEYWORD,announce,DIRECT
+  - DOMAIN-KEYWORD,bittorrent,DIRECT
+  - DST-PORT,33445,DIRECT
+  - DST-PORT,51413,DIRECT
+  - PROTOCOL,BitTorrent,DIRECT
+
+  # GeoASN 分流
+  - ASN,4134,🎯 全球直连
+  - ASN,4837,🎯 全球直连
+  - ASN,9808,🎯 全球直连
+  - ASN,45102,🎯 全球直连
+  - ASN,4538,🎯 全球直连
+  - ASN,17490,🎯 全球直连
+  - ASN,9304,🎯 全球直连
+  - ASN,10103,🎯 全球直连
+  - ASN,13335,🌍 国外流量
+  - ASN,15169,🌍 国外流量
+  - ASN,32934,🌍 国外流量
+  - ASN,8075,🌍 国外流量
+  - ASN,16509,🌍 国外流量
+
+  # 国内视频
+  - RULE-SET,cn-media,🎯 全球直连
+
+  # 国外流媒体
+  - RULE-SET,youtube,📺 YouTube
+  - RULE-SET,netflix,🎬 Netflix
+  - RULE-SET,disney,🐭 Disney+
+
+  # 国内直连
+  - RULE-SET,geosite-cn,🎯 全球直连
+  - RULE-SET,geoip-cn,🎯 全球直连
+
+  # 默认 → 国外流量
+  - MATCH,🌍 国外流量

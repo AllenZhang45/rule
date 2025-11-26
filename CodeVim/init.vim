@@ -1,36 +1,37 @@
-" ----------------------------------------------------
-" codevim/init.vim - 项目主引导文件
-" ----------------------------------------------------
+" =========================
+" CodeVim - Main Init File
+" =========================
 
-" 确保 g:codevim_root 变量已设置 (由 ~/.vimrc 传入)
 if !exists('g:codevim_root')
-    echohl ErrorMsg
-    echo "ERROR: g:codevim_root variable not set! Please check your ~/.vimrc."
-    echohl None
+    echohl ErrorMsg | echo "ERROR: g:codevim_root is not set!" | echohl None
     finish
 endif
 
-" 基础设置 (例如：文件类型检测，必须在前面)
+" 基础启用
 filetype plugin indent on
 syntax on
 
-" ------------------------------------------
-" 模块加载区域
-" ------------------------------------------
+" -------------------------
+" 核心配置
+" -------------------------
+source $HOME/.config/nvim/core/options.vim
+source $HOME/.config/nvim/core/keymaps.vim
+source $HOME/.config/nvim/core/autocmds.vim
 
-" 1. 加载 GUI/外观配置
-execute 'source' g:codevim_root . '/gui.vim'
+" -------------------------
+" UI 设置
+" -------------------------
+source $HOME/.config/nvim/ui/colors.vim
+source $HOME/.config/nvim/ui/gui.vim
+source $HOME/.config/nvim/ui/statusline.vim
 
-" 2. 加载 Editor (编辑区核心功能) 配置
-execute 'source' g:codevim_root . '/editor.vim'
+" -------------------------
+" 自定义模块
+" -------------------------
+source $HOME/.config/nvim/modules/editor.vim
+source $HOME/.config/nvim/modules/workspace.vim
 
-" 3. 加载 Workspace (文件树/布局) 配置
-execute 'source' g:codevim_root . '/workspace.vim'
-
-" 4. 加载 Status (底部状态栏) 配置
-execute 'source' g:codevim_root . '/status.vim'
-
-" 5. 加载 Mappings (快捷键映射)配置
-execute 'source' g:codevim_root . '/mappings.vim'
-
-" [如果未来有插件管理，也在这里处理]
+" -------------------------
+" 插件（可选）
+" -------------------------
+source $HOME/.config/nvim/plugins/init.vim
